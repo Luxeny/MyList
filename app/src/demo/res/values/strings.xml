@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MyList Demo</string>
+    <string name="about_subtitle">Демо-версия менеджера списков</string>
+</resources>
