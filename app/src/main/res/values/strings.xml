@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">MyList</string>
+    <string name="about_title">О приложении</string>
+    <string name="about_back">Назад</string>
+    <string name="about_subtitle">Персональный менеджер списков</string>
 </resources>

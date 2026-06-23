@@ -3,6 +3,9 @@ package com.example.mylist.presentation.items
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.mylist.core.domain.model.ItemStatus
 import com.example.mylist.core.domain.model.ListItem
+import com.example.mylist.presentation.common.ListStateContent
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,22 +39,29 @@ fun ItemsScreen(
     categoryColor: Int,
     onBackClick: () -> Unit
 ) {
-    val items by viewModel.items.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val themeColor = Color(categoryColor)
     var selectedStatus by remember { mutableStateOf(ItemStatus.WANT) }
     var showAddDialog by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ListItem?>(null) }
     var isSearchVisible by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val filteredItems = items.filter { it.status == selectedStatus }
+    LaunchedEffect(viewModel) {
+        viewModel.snackbarMessage.collectLatest { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.Black)
+                    .windowInsetsPadding(WindowInsets.statusBars)
             ) {
                 CenterAlignedTopAppBar(
                     title = {
@@ -150,18 +162,53 @@ fun ItemsScreen(
         },
         containerColor = Color.Black
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(filteredItems, key = { it.id }) { item ->
-                ItemCard(
-                    item = item,
-                    onClick = { itemToEdit = item }
-                )
+        ListStateContent(
+            state = uiState,
+            onRetry = { viewModel.retry() },
+            emptyTitle = "Список пуст",
+            emptyMessage = when (selectedStatus) {
+                ItemStatus.WANT -> "Добавьте элементы, которые хотите посмотреть или прочитать"
+                ItemStatus.IN_PROGRESS -> "Здесь появятся элементы в процессе"
+                ItemStatus.DONE -> "Завершённые элементы будут отображаться здесь"
+            },
+            modifier = Modifier.padding(padding)
+        ) { items ->
+            val filteredItems = items.filter { it.status == selectedStatus }
+            if (filteredItems.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Нет элементов в этой вкладке",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Нажмите «+», чтобы добавить",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredItems, key = { it.id }) { item ->
+                        ItemCard(
+                            item = item,
+                            onClick = { itemToEdit = item }
+                        )
+                    }
+                }
             }
         }
 

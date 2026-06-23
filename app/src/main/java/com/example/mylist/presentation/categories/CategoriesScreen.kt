@@ -5,6 +5,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -28,9 +31,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.mylist.BuildConfig
 import com.example.mylist.core.domain.model.Category
 import com.example.mylist.presentation.about.AboutActivity
+import com.example.mylist.presentation.common.ListStateContent
 import com.example.mylist.ui.theme.Palette
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,21 +44,29 @@ fun CategoriesScreen(
     viewModel: CategoriesViewModel,
     onCategoryClick: (Category) -> Unit
 ) {
-    val categories by viewModel.categories.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isAscending by viewModel.isAscending.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var isSearchVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.snackbarMessage.collectLatest { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.Black)
-                    .padding(top = 16.dp)
+                    .windowInsetsPadding(WindowInsets.statusBars)
             ) {
                 Row(
                     modifier = Modifier
@@ -61,15 +75,31 @@ fun CategoriesScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Мои Списки",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Мои Списки",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color.White
+                        )
+                        if (BuildConfig.FULL_VERSION) {
+                            Surface(
+                                color = Color.White.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Text(
+                                    text = "PRO",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                     Row {
                         val context = LocalContext.current
-                        IconButton(onClick = { 
-                            android.util.Log.d("CategoriesScreen", "About button clicked")
+                        IconButton(onClick = {
                             context.startActivity(Intent(context, AboutActivity::class.java))
                         }) {
                             Icon(Icons.Default.Info, contentDescription = "About", tint = Color.White)
@@ -127,20 +157,26 @@ fun CategoriesScreen(
         },
         containerColor = Color.Black
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(categories, key = { it.id }) { category ->
-                CategoryCard(
-                    category = category,
-                    onClick = { onCategoryClick(category) },
-                    onEdit = { categoryToEdit = category },
-                    onDelete = { viewModel.deleteCategory(category) }
-                )
+        ListStateContent(
+            state = uiState,
+            onRetry = { viewModel.retry() },
+            emptyTitle = "Пока нет категорий",
+            emptyMessage = "Нажмите «+», чтобы создать первый список",
+            modifier = Modifier.padding(padding)
+        ) { categories ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(categories, key = { it.id }) { category ->
+                    CategoryCard(
+                        category = category,
+                        onClick = { onCategoryClick(category) },
+                        onEdit = { categoryToEdit = category },
+                        onDelete = { viewModel.deleteCategory(category) }
+                    )
+                }
             }
         }
 

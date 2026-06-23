@@ -33,7 +33,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun MyListTheme(
-    darkTheme: Boolean = true, // Always dark as per requirement
+    darkTheme: Boolean = true,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
