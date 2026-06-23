@@ -10,6 +10,7 @@ import com.example.mylist.core.domain.usecase.DeleteItemUseCase
 import com.example.mylist.core.domain.usecase.GetItemsUseCase
 import com.example.mylist.core.domain.usecase.UpdateItemStatusUseCase
 import com.example.mylist.core.domain.usecase.UpdateItemUseCase
+import com.example.mylist.analytics.AppAnalytics
 import com.example.mylist.presentation.common.ListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -33,10 +34,15 @@ class ItemsViewModel @Inject constructor(
     private val updateItemUseCase: UpdateItemUseCase,
     private val deleteItemUseCase: DeleteItemUseCase,
     private val updateItemStatusUseCase: UpdateItemStatusUseCase,
+    private val appAnalytics: AppAnalytics,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     val categoryId: Long = checkNotNull(savedStateHandle["categoryId"])
+
+    init {
+        appAnalytics.logItemsScreenOpened(categoryId)
+    }
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
@@ -89,7 +95,10 @@ class ItemsViewModel @Inject constructor(
                 addItemUseCase(
                     ListItem(categoryId = categoryId, name = name, description = description, status = status)
                 )
+            }.onSuccess {
+                appAnalytics.logItemCreated(status.name)
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось добавить элемент", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось добавить элемент")
             }
         }
@@ -99,7 +108,10 @@ class ItemsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 updateItemUseCase(item)
+            }.onSuccess {
+                appAnalytics.logItemUpdated()
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось обновить элемент", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось обновить элемент")
             }
         }
@@ -109,7 +121,10 @@ class ItemsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 deleteItemUseCase(item)
+            }.onSuccess {
+                appAnalytics.logItemDeleted()
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось удалить элемент", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось удалить элемент")
             }
         }
@@ -119,7 +134,10 @@ class ItemsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 updateItemStatusUseCase(itemId, status)
+            }.onSuccess {
+                appAnalytics.logItemStatusChanged(status.name)
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось изменить статус", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось изменить статус")
             }
         }

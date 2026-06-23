@@ -95,7 +95,10 @@ class CategoriesViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 updateCategoryUseCase(category)
+            }.onSuccess {
+                appAnalytics.logCategoryUpdated()
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось обновить категорию", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось обновить категорию")
             }
         }
@@ -105,7 +108,10 @@ class CategoriesViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 deleteCategoryUseCase(category)
+            }.onSuccess {
+                appAnalytics.logCategoryDeleted()
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось удалить категорию", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось удалить категорию")
             }
         }

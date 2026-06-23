@@ -5,13 +5,16 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-import java.util.Properties
-
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) {
-        file.inputStream().use { load(it) }
-    }
+fun readLocalProperty(key: String): String {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (!localPropertiesFile.exists()) return ""
+    return localPropertiesFile.readLines()
+        .asSequence()
+        .map { it.trim() }
+        .firstOrNull { line -> !line.startsWith("#") && line.startsWith("$key=") }
+        ?.substringAfter("=", "")
+        ?.trim()
+        ?: ""
 }
 
 android {
@@ -21,12 +24,12 @@ android {
     defaultConfig {
         applicationId = "com.example.mylist"
         minSdk = 29
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val appMetricaKey = localProperties.getProperty("APPMETRICA_API_KEY", "")
+        val appMetricaKey = readLocalProperty("APPMETRICA_API_KEY")
         buildConfigField("String", "APPMETRICA_API_KEY", "\"$appMetricaKey\"")
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
