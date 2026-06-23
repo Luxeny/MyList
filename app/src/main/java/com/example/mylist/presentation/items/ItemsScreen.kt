@@ -91,7 +91,7 @@ fun ItemsScreen(
                             )
                         }
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
 
                 AnimatedVisibility(visible = isSearchVisible) {

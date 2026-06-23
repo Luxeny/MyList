@@ -3,4 +3,5 @@
     <string name="about_title">О приложении</string>
     <string name="about_back">Назад</string>
     <string name="about_subtitle">Персональный менеджер списков</string>
+    <string name="about_description">Приложение для ведения личных списков: фильмы, книги, курсы и другие категории с удобной сортировкой и статусами.</string>
 </resources>

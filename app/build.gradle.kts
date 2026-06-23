@@ -17,6 +17,21 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("mylist.jks")
+            storePassword = "mylist2026"
+            keyAlias = "mylist"
+            keyPassword = "mylist2026"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+        }
     }
 
     flavorDimensions += "version"
@@ -39,6 +54,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -58,6 +74,12 @@ android {
         compose = true
         viewBinding = true
         buildConfig = true
+    }
+
+    packaging {
+        jniLibs {
+            keepDebugSymbols += "**/libandroidx.graphics.path.so"
+        }
     }
 }
 

@@ -1,0 +1,2 @@
+-keep class com.example.mylist.core.data.local.entity.** { *; }
+-keep class com.example.mylist.core.domain.model.** { *; }
