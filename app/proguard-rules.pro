@@ -7,3 +7,6 @@
 
 -keep class com.example.mylist.core.domain.model.** { *; }
 -keep class com.example.mylist.core.data.local.entity.** { *; }
+
+-keep class io.appmetrica.analytics.** { *; }
+-dontwarn io.appmetrica.analytics.**

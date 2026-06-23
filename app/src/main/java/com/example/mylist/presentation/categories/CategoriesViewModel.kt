@@ -2,6 +2,7 @@ package com.example.mylist.presentation.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mylist.analytics.AppAnalytics
 import com.example.mylist.core.domain.model.Category
 import com.example.mylist.core.domain.usecase.AddCategoryUseCase
 import com.example.mylist.core.domain.usecase.DeleteCategoryUseCase
@@ -28,7 +29,8 @@ class CategoriesViewModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val addCategoryUseCase: AddCategoryUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase
+    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val appAnalytics: AppAnalytics
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -80,7 +82,10 @@ class CategoriesViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 addCategoryUseCase(Category(name = name, description = description, color = color))
+            }.onSuccess {
+                appAnalytics.logCategoryCreated(name)
             }.onFailure {
+                appAnalytics.logHandledError("Не удалось создать категорию", it)
                 _snackbarMessage.emit(it.message ?: "Не удалось создать категорию")
             }
         }

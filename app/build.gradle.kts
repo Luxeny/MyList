@@ -5,6 +5,15 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.example.mylist"
     compileSdk = 37
@@ -17,6 +26,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        val appMetricaKey = localProperties.getProperty("APPMETRICA_API_KEY", "")
+        buildConfigField("String", "APPMETRICA_API_KEY", "\"$appMetricaKey\"")
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
@@ -100,6 +111,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.appmetrica.analytics)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
